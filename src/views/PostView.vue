@@ -66,7 +66,7 @@ async function getPosts() {
       amountpost: posts.value.length,
     });
     getPosts();
-  }, 1000 * 60);
+  }, 1000 * 60); // computed every 1 min
 }
 
 watch(() => route.params.user, getPosts);

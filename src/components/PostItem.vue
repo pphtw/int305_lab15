@@ -2,7 +2,14 @@
 import { onMounted, ref } from "vue";
 import CommentItem from "../components/CommentItem.vue";
 import NewComment from "./NewComment.vue";
-import { collection, getDocs, query, addDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  addDoc,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
 import db from "../firebase/init.js";
 
 const emits = defineEmits(["addComment"]);
@@ -20,37 +27,15 @@ const post = ref(props.post);
 const commentRef = collection(db, "posts", post.value.id, "comments");
 
 async function getComments() {
-  // onSnapshot(
-  //   commentRef,
-  //   async (commentSnap) => {
-  //     commentSnap.docChanges().forEach((changeComment) => {
-  //       switch (changeComment.type) {
-  //         case "added":
-  //           let comment = changeComment.doc.data();
-  //           comment.id = changeComment.doc.id;
-  //           post.value.comments.push(comment);
-  //           break;
-  //         case "modified":
-  //           // Handle modified document
-  //           break;
-  //         case "removed":
-  //           let delCommentIndex = post.value.comments.findIndex(
-  //             (e) => e.id === change.doc.id
-  //           );
-  //           post.value.comments.splice(delCommentIndex, 1);
-  //           break;
-  //       }
-  //     });
-  //   },
-  //   (err) => {
-  //     console.log(`Encountered error: ${err}`);
-  //   }
-  // );
-
   let qry = query(commentRef);
   let snap = await getDocs(qry);
   post.value.comments = snap.docs.map((doc) => doc.data());
-  // console.log(post.value);
+
+  setInterval(async () => {
+    await updateDoc(doc(db, "posts", post.value.id), {
+      amountcmt: post.value.comments.length,
+    });
+  }, 1000 * 60);
 }
 
 onMounted(async () => {
@@ -73,7 +58,7 @@ const addNewComment = async (commentDetail) => {
 <template>
   <div class="box">
     {{ post.body }}
-    <h4 class="title">comments ({{ post.comments.length }})</h4>
+    <h4 class="title">comments ({{ post.amountcmt }})</h4>
     <CommentItem
       v-for="comment in post.comments"
       :comment="comment"

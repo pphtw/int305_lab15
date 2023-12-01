@@ -9,6 +9,7 @@ import {
   onSnapshot,
   doc,
   getDoc,
+  updateDoc,
 } from "firebase/firestore";
 import db from "../firebase/init.js";
 import PostItem from "../components/PostItem.vue";
@@ -16,47 +17,6 @@ import PostItem from "../components/PostItem.vue";
 const user = ref({});
 const posts = ref([]);
 const route = useRoute();
-
-// async function getComments(postId) {
-//   const commentRef = collection(db, "posts", postId, "comments");
-//   let comments = await getDocs(query(commentRef));
-//   comments = comments.docs.map((e) => e.data());
-//   return comments;
-
-// console.log(comments);
-// onSnapshot(
-//   commentRef,
-//   async (commentSnap) => {
-//     // comments = commentSnap.docChanges();
-//     // comments = comments.map((e) => e.doc.data());
-//     // console.log(comments);
-
-//     let comments = [];
-//     commentSnap.docChanges().forEach((changeComment) => {
-//       switch (changeComment.type) {
-//         case "added":
-//           let comment = changeComment.doc.data();
-//           comment.id = changeComment.doc.id;
-//           comments.push(comment);
-//           break;
-//         case "modified":
-//           // Handle modified document
-//           break;
-//         case "removed":
-//           let delCommentIndex = data.comments.findIndex(
-//             (e) => e.id === change.doc.id
-//           );
-//           data.comments.splice(delCommentIndex, 1);
-//           break;
-//       }
-//     });
-//     return comments;
-//   },
-//   (err) => {
-//     console.log(`Encountered error: ${err}`);
-//   }
-// );
-// }
 
 async function getPosts() {
   let userId = route.params.user;
@@ -81,34 +41,6 @@ async function getPosts() {
             data.id = change.doc.id;
             data.user = user.value;
             data.comments = [];
-            // let comments = await getComments(data.id);
-            // data.comments = comments;
-
-            // const commentRef = collection(db,"posts", change.doc.id, "comments")
-            // onSnapshot(commentRef, (commentSnap) => {
-            //   // let comments = commentSnap.docChanges()
-            //   // comments = comments.map(e=> e.doc.data())
-            //   // data.comments = comments
-
-            //   commentSnap.docChanges().forEach((changeComment) => {
-            //     switch (changeComment.type) {
-            //     case 'added':
-            //       let comment = changeComment.doc.data();
-            //       comment.id = changeComment.doc.id;
-            //       data.comments.push(comment);
-            //       break;
-            //     case 'modified':
-            //       // Handle modified document
-            //       break;
-            //     case 'removed':
-            //       let delCommentIndex = data.comments.findIndex(e => e.id === change.doc.id)
-            //       data.comments.splice(delCommentIndex,1)
-            //       break;
-            // }})
-            // }, err => {
-            //     console.log(`Encountered error: ${err}`);
-            // })
-            // console.log(posts.value);
             posts.value.push(data);
             break;
           case "modified":
@@ -127,6 +59,14 @@ async function getPosts() {
       console.log(`Encountered error: ${err}`);
     }
   );
+
+  //computed pattern
+  setInterval(async () => {
+    await updateDoc(doc(db, "users", userId), {
+      amountpost: posts.value.length,
+    });
+    getPosts();
+  }, 1000 * 60);
 }
 
 watch(() => route.params.user, getPosts);
@@ -137,7 +77,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <h3>Posts : {{ user.firstname }} {{ user.lastname }} ({{ posts.length }})</h3>
+  <h3>
+    Posts : {{ user.firstname }} {{ user.lastname }} ({{ user.amountpost }})
+  </h3>
   <PostItem v-for="post in posts" :post="post" :key="post.id" />
 </template>
 
